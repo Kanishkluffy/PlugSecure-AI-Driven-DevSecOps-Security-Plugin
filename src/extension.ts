@@ -143,6 +143,90 @@ export function scanProject(
             outputChannel.appendLine(stdout);
         }
     });
+
+    //STEP 3: Install Trivy If missing
+
+
+    //STEP 4: Check for Dockerfile and run Trivy scan
+    
+    // const dockerfilePath = path.join(projectPath, "Dockerfile");
+    // if (fs.existsSync(dockerfilePath)) {
+    //     vscode.window.showInformationMessage("Dockerfile detected. Running Trivy container scan...");
+    //     //get image name from dockerfile
+    //     const dockerfileContent = fs.readFileSync(dockerfilePath, 'utf-8');
+    //     const fromLine = dockerfileContent.split('\n').find(line => line.trim().startsWith('FROM'));
+    //     if (fromLine) {
+    //         const imageName = fromLine.split(' ')[1].trim();
+    //         const trivyScanCommand = `trivy image ${imageName}`;
+    //         exec(trivyScanCommand, { maxBuffer: 1024 * 1024 }, (error, stdout) => {
+    //             if (error) {
+    //                 vscode.window.showErrorMessage("Trivy scan failed. Please ensure the Docker image is built and accessible.");
+    //                 return;
+    //             }
+    //             outputChannel.appendLine('Trivy Container Scan Results:');
+    //             outputChannel.appendLine(stdout);
+    //         });
+    //     } else {
+    //         vscode.window.showWarningMessage("No valid FROM instruction found in Dockerfile. Skipping Trivy scan.");
+    //     }
+    // } else {
+    //     vscode.window.showInformationMessage("No Dockerfile found. Skipping container scan.");
+    // } 
+
+    // STEP 3: Check Trivy
+    exec("trivy --version", (error) => {
+
+        if (error) {
+            vscode.window.showWarningMessage(
+                "Trivy is not installed. Please install Trivy to enable dependency scanning."
+            );
+            return; // STOP here
+        }
+
+        vscode.window.showInformationMessage(
+            "Trivy detected. Running dependency scan..."
+        );
+
+        const trivyCommand = `trivy fs --severity HIGH,CRITICAL --format json "${projectPath}"`;
+
+        exec(trivyCommand, { maxBuffer: 1024 * 1024 }, (scanError, stdout) => {
+
+            if (scanError && !stdout) {
+                vscode.window.showErrorMessage("Trivy scan failed.");
+                return;
+            }
+
+            try {
+                const result = JSON.parse(stdout);
+
+                outputChannel.appendLine("\nTrivy Dependency Scan Results:\n");
+
+                if (!result.Results || result.Results.length === 0) {
+                    outputChannel.appendLine("No HIGH or CRITICAL vulnerabilities found.");
+                    return;
+                }
+
+                result.Results.forEach((res: any) => {
+                    if (res.Vulnerabilities) {
+                        res.Vulnerabilities.forEach((vuln: any, index: number) => {
+                            outputChannel.appendLine(`Vulnerability ${index + 1}`);
+                            outputChannel.appendLine(`Package   : ${vuln.PkgName}`);
+                            outputChannel.appendLine(`Severity  : ${vuln.Severity}`);
+                            outputChannel.appendLine(`Installed : ${vuln.InstalledVersion}`);
+                            outputChannel.appendLine(`Fixed     : ${vuln.FixedVersion || "N/A"}`);
+                            outputChannel.appendLine(`Title     : ${vuln.Title}`);
+                            outputChannel.appendLine("--------------------------------------\n");
+                        });
+                    }
+                });
+
+            } catch {
+                outputChannel.appendLine(stdout);
+            }
+
+        });
+
+    });
 }
 
 
