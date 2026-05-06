@@ -10,18 +10,29 @@
     "Other"
   ],
   "activationEvents": [
-    "onCommand:plugsecure.scanProject"
+    "onCommand:plugsecure.scanProject",
+    "onCommand:plugsecure.login",
+    "onCommand:plugsecure.signup",
+    "onCommand:plugsecure.logout"
   ],
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
       {
-        "command": "plugsecure.helloWorld",
-        "title": "PlugSecure: Hello World"
-      },
-      {
         "command": "plugsecure.scanProject",
         "title": "PlugSecure: Scan Project"
+      },
+      {
+        "command": "plugsecure.login",
+        "title": "PlugSecure: Login"
+      },
+      {
+        "command": "plugsecure.signup",
+        "title": "PlugSecure: Signup"
+      },
+      {
+        "command": "plugsecure.logout",
+        "title": "PlugSecure: Logout"
       }
     ]
   },
